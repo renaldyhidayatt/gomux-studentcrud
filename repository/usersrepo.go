@@ -3,39 +3,30 @@ package repository
 import (
 	"context"
 	"database/sql"
-	"errors"
-	"fmt"
 	"log"
-	"time"
 
-	"github.com/renaldyhidayatt/crud_blog/config"
 	"github.com/renaldyhidayatt/crud_blog/dto"
 )
 
-const (
-	table          = "users"
-	layoutDateTime = "2006-01-02 15:04:05"
-)
+type usersRepository struct {
+	db *sql.DB
+}
 
-func GetAll(ctx context.Context) ([]dto.Users, error) {
+func NewUserRepository(db *sql.DB) *usersRepository {
+	return &usersRepository{db: db}
+}
+
+func (r *usersRepository) GetAll(ctx context.Context) ([]dto.Users, error) {
+	var user dto.Users
 	var users []dto.Users
 
-	db, err := config.InitialDatabase()
-
-	if err != nil {
-		log.Fatal("Tidak bisa connect mysql")
-	}
-	queryText := fmt.Sprintf("SELECT * FROM %v Order By id DESC", table)
-
-	rowQuery, err := db.QueryContext(ctx, queryText)
+	rowQuery, err := r.db.QueryContext(ctx, "SELECT * FROM users ORDER BY id DESC")
 
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	for rowQuery.Next() {
-		var user dto.Users
-
 		if err = rowQuery.Scan(
 			&user.ID,
 			&user.Name,
@@ -50,67 +41,98 @@ func GetAll(ctx context.Context) ([]dto.Users, error) {
 	return users, nil
 }
 
-func Insert(ctx context.Context, user dto.Users) error {
-	db, err := config.InitialDatabase()
+func (r *usersRepository) GetID(ctx context.Context, id int) (dto.Users, error) {
+	var user dto.Users
+
+	result, err := r.db.QueryContext(ctx, "SELECT id, name, hobby FROM users WHERE id = ?", id)
 
 	if err != nil {
-		log.Fatal("Tidak Connect ke database ", err)
+		log.Fatal("Error Query User: " + err.Error())
+		return user, err
 	}
 
-	queryText := fmt.Sprintf("INSERT INTO %v (name, hobby, created_at, updated_at) values('%s','%s','%v','%v')",
-		table,
-		user.Name,
-		user.Hobby,
-		time.Now().Format(layoutDateTime),
-		time.Now().Format(layoutDateTime),
-	)
-
-	_, err = db.ExecContext(ctx, queryText)
-
-	if err != nil && err != sql.ErrNoRows {
-		log.Fatal(err)
+	for result.Next() {
+		err := result.Scan(&user.ID, &user.Name, &user.Hobby)
+		if err != nil {
+			return user, err
+		}
 	}
 
-	return nil
+	return user, nil
+
 }
 
-func Update(ctx context.Context, user dto.Users) error {
-	db, err := config.InitialDatabase()
+func (r *usersRepository) Insert(ctx context.Context, usr *dto.Users) (dto.Users, error) {
+
+	var user dto.Users
+
+	crt, err := r.db.PrepareContext(ctx, "INSERT INTO users (name, hobby) VALUES (?, ?)")
 
 	if err != nil {
-		log.Fatal("Tidak Connect ke database ", err)
+		return user, err
 	}
 
-	queryText := fmt.Sprintf("UPDATE %v set name='%s',hobby='%s' WHERE id='%d'", table, user.Name, user.Hobby, user.ID)
+	res, err := crt.ExecContext(ctx, usr.Name, usr.Hobby)
 
-	_, err = db.ExecContext(ctx, queryText)
-
-	if err != nil && err != sql.ErrNoRows {
-		log.Fatal(err)
+	if err != nil {
+		return user, err
 	}
 
-	return nil
+	rowID, err := res.LastInsertId()
+
+	if err != nil {
+		return user, err
+	}
+
+	user.ID = int(rowID)
+
+	result, err := r.GetID(ctx, user.ID)
+
+	if err != nil {
+		return user, err
+	}
+
+	return result, nil
 }
 
-func Delete(ctx context.Context, user dto.Users) error {
-	db, err := config.InitialDatabase()
+func (r *usersRepository) Update(ctx context.Context, usr dto.Users) (dto.Users, error) {
+
+	crt, err := r.db.PrepareContext(ctx, "UPDATE users set name=?,hobby=? WHERE id=?")
+
+	var user dto.Users
+
 	if err != nil {
-		log.Fatal("Tidak Connect ke database ", err)
+		return user, err
 	}
-
-	queryText := fmt.Sprintf("DELETE FROM %v where id = '%d'", table, user.ID)
-
-	s, err := db.ExecContext(ctx, queryText)
 
 	if err != nil && err != sql.ErrNoRows {
 		log.Fatal(err)
 	}
 
-	check, err := s.RowsAffected()
+	_, queryError := crt.Exec(user.Name, usr.Hobby, usr.ID)
+	if queryError != nil {
+		return user, err
+	}
 
-	if check == 0 {
+	res, err := r.GetID(ctx, user.ID)
+	if err != nil {
+		return user, err
+	}
 
-		return errors.New("Not found your id")
+	return res, nil
+}
+
+func (r *usersRepository) Delete(ctx context.Context, id int64) error {
+	crt, err := r.db.PrepareContext(ctx, "DELETE FROM users WHERE id = ?")
+
+	if err != nil {
+		return err
+	}
+
+	_, queryError := crt.ExecContext(ctx, id)
+
+	if queryError != nil {
+		return err
 	}
 
 	return nil

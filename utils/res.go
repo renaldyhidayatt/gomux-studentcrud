@@ -5,16 +5,14 @@ import (
 	"net/http"
 )
 
-func ResponseJson(w http.ResponseWriter, p interface{}, status int) {
-	ubahkeByte, err := json.Marshal(p)
+func ResponseWithError(w http.ResponseWriter, code int, message string) {
+	ResponseWithJSON(w, code, map[string]string{"error": message})
+}
+
+func ResponseWithJSON(w http.ResponseWriter, code int, payload interface{}) {
+	response, _ := json.Marshal(payload)
 
 	w.Header().Set("Content-Type", "application/json")
-
-	if err != nil {
-		http.Error(w, "error om", http.StatusBadRequest)
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(status)
-	w.Write([]byte(ubahkeByte))
+	w.WriteHeader(code)
+	w.Write(response)
 }
