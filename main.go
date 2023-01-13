@@ -8,6 +8,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/renaldyhidayatt/crud_blog/config"
 	"github.com/renaldyhidayatt/crud_blog/dto"
+	"github.com/renaldyhidayatt/crud_blog/migrate"
 	"github.com/renaldyhidayatt/crud_blog/repository"
 	"github.com/renaldyhidayatt/crud_blog/services"
 )
@@ -18,6 +19,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err.Error())
 	}
+	migrate.MigrationTable(db)
 
 	log.Println("Start the dev server at http://127.0.0.1:8000")
 

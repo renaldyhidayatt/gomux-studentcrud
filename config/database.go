@@ -1,28 +1,27 @@
 package config
 
 import (
-	"database/sql"
 	"fmt"
 	"log"
 
-	_ "github.com/go-sql-driver/mysql"
+	"github.com/jmoiron/sqlx"
+	_ "github.com/lib/pq"
 )
 
-var db *sql.DB
-var err error
-
 const (
-	username string = "root"
+	username string = "postgres"
 	password string = ""
+	host     string = "localhost"
+	port     int    = 5432
 	database string = "crud_blog"
 )
 
 var (
-	dsn = fmt.Sprintf("%v:%v@/%v", username, password, database)
+	dsn = fmt.Sprintf("postgres://%v:%v@%v:%v/%v?sslmode=disable", username, password, host, port, database)
 )
 
-func InitialDatabase() (*sql.DB, error) {
-	db, err = sql.Open("mysql", dsn)
+func InitialDatabase() (*sqlx.DB, error) {
+	db, err := sqlx.Connect("postgres", dsn)
 
 	checkErr(err)
 	err = db.Ping()

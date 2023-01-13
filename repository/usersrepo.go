@@ -5,14 +5,15 @@ import (
 	"database/sql"
 	"log"
 
+	"github.com/jmoiron/sqlx"
 	"github.com/renaldyhidayatt/crud_blog/dto"
 )
 
 type usersRepository struct {
-	db *sql.DB
+	db *sqlx.DB
 }
 
-func NewUserRepository(db *sql.DB) *usersRepository {
+func NewUserRepository(db *sqlx.DB) *usersRepository {
 	return &usersRepository{db: db}
 }
 
