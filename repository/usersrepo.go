@@ -10,18 +10,19 @@ import (
 )
 
 type usersRepository struct {
-	db *sqlx.DB
+	db      *sqlx.DB
+	context context.Context
 }
 
-func NewUserRepository(db *sqlx.DB) *usersRepository {
-	return &usersRepository{db: db}
+func NewUserRepository(db *sqlx.DB, context context.Context) *usersRepository {
+	return &usersRepository{db: db, context: context}
 }
 
-func (r *usersRepository) GetAll(ctx context.Context) ([]dto.Users, error) {
+func (r *usersRepository) GetAll() ([]dto.Users, error) {
 	var user dto.Users
 	var users []dto.Users
 
-	rowQuery, err := r.db.QueryContext(ctx, "SELECT * FROM users ORDER BY id DESC")
+	rowQuery, err := r.db.QueryContext(r.context, "SELECT * FROM users ORDER BY id DESC")
 
 	if err != nil {
 		log.Fatal(err)
@@ -42,10 +43,10 @@ func (r *usersRepository) GetAll(ctx context.Context) ([]dto.Users, error) {
 	return users, nil
 }
 
-func (r *usersRepository) GetID(ctx context.Context, id int) (dto.Users, error) {
+func (r *usersRepository) GetID(id int) (dto.Users, error) {
 	var user dto.Users
 
-	result, err := r.db.QueryContext(ctx, "SELECT id, name, hobby FROM users WHERE id = ?", id)
+	result, err := r.db.QueryContext(r.context, "SELECT id, name, hobby FROM users WHERE id = ?", id)
 
 	if err != nil {
 		log.Fatal("Error Query User: " + err.Error())
@@ -63,17 +64,17 @@ func (r *usersRepository) GetID(ctx context.Context, id int) (dto.Users, error) 
 
 }
 
-func (r *usersRepository) Insert(ctx context.Context, usr *dto.Users) (dto.Users, error) {
+func (r *usersRepository) Insert(usr *dto.Users) (dto.Users, error) {
 
 	var user dto.Users
 
-	crt, err := r.db.PrepareContext(ctx, "INSERT INTO users (name, hobby) VALUES (?, ?)")
+	crt, err := r.db.PrepareContext(r.context, "INSERT INTO users (name, hobby) VALUES (?, ?)")
 
 	if err != nil {
 		return user, err
 	}
 
-	res, err := crt.ExecContext(ctx, usr.Name, usr.Hobby)
+	res, err := crt.ExecContext(r.context, usr.Name, usr.Hobby)
 
 	if err != nil {
 		return user, err
@@ -87,7 +88,7 @@ func (r *usersRepository) Insert(ctx context.Context, usr *dto.Users) (dto.Users
 
 	user.ID = int(rowID)
 
-	result, err := r.GetID(ctx, user.ID)
+	result, err := r.GetID(user.ID)
 
 	if err != nil {
 		return user, err
@@ -96,9 +97,9 @@ func (r *usersRepository) Insert(ctx context.Context, usr *dto.Users) (dto.Users
 	return result, nil
 }
 
-func (r *usersRepository) Update(ctx context.Context, usr dto.Users) (dto.Users, error) {
+func (r *usersRepository) Update(usr dto.Users) (dto.Users, error) {
 
-	crt, err := r.db.PrepareContext(ctx, "UPDATE users set name=?,hobby=? WHERE id=?")
+	crt, err := r.db.PrepareContext(r.context, "UPDATE users set name=?,hobby=? WHERE id=?")
 
 	var user dto.Users
 
@@ -115,7 +116,7 @@ func (r *usersRepository) Update(ctx context.Context, usr dto.Users) (dto.Users,
 		return user, err
 	}
 
-	res, err := r.GetID(ctx, user.ID)
+	res, err := r.GetID(user.ID)
 	if err != nil {
 		return user, err
 	}
@@ -123,14 +124,14 @@ func (r *usersRepository) Update(ctx context.Context, usr dto.Users) (dto.Users,
 	return res, nil
 }
 
-func (r *usersRepository) Delete(ctx context.Context, id int64) error {
-	crt, err := r.db.PrepareContext(ctx, "DELETE FROM users WHERE id = ?")
+func (r *usersRepository) Delete(id int64) error {
+	crt, err := r.db.PrepareContext(r.context, "DELETE FROM users WHERE id = ?")
 
 	if err != nil {
 		return err
 	}
 
-	_, queryError := crt.ExecContext(ctx, id)
+	_, queryError := crt.ExecContext(r.context, id)
 
 	if queryError != nil {
 		return err

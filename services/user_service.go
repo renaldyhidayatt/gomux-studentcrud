@@ -21,7 +21,7 @@ func NewUserServices(user dao.DaoUser) *userServices {
 }
 
 func (s *userServices) GetAll(w http.ResponseWriter, r *http.Request) {
-	res, err := s.user.GetAll(r.Context())
+	res, err := s.user.GetAll()
 
 	if err != nil {
 		utils.ResponseWithError(w, http.StatusBadRequest, err.Error())
@@ -40,7 +40,7 @@ func (s *userServices) GetID(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	res, err := s.user.GetID(r.Context(), int(id))
+	res, err := s.user.GetID(int(id))
 
 	if err != nil {
 		utils.ResponseWithError(w, http.StatusBadRequest, err.Error())
@@ -67,7 +67,7 @@ func (s *userServices) CreateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	res, err := s.user.Insert(r.Context(), &users)
+	res, err := s.user.Insert(&users)
 
 	if err != nil {
 		utils.ResponseWithError(w, http.StatusBadRequest, err.Error())
@@ -89,7 +89,7 @@ func (s *userServices) UpdateUser(w http.ResponseWriter, r *http.Request) {
 
 	json.Unmarshal([]byte(body), &users)
 
-	res, err := s.user.Update(r.Context(), users)
+	res, err := s.user.Update(users)
 
 	if err != nil {
 		utils.ResponseWithError(w, http.StatusBadRequest, err.Error())
@@ -110,7 +110,7 @@ func (s *userServices) DeleteUser(w http.ResponseWriter, r *http.Request) {
 		panic(err.Error())
 	}
 
-	err = s.user.Delete(r.Context(), id)
+	err = s.user.Delete(id)
 
 	if err != nil {
 		utils.ResponseWithError(w, http.StatusBadRequest, err.Error())

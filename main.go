@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"log"
 	"net/http"
@@ -16,6 +17,8 @@ import (
 func main() {
 	db, err := config.InitialDatabase()
 
+	context := context.Background()
+
 	if err != nil {
 		log.Fatal(err.Error())
 	}
@@ -25,7 +28,7 @@ func main() {
 
 	myRouter := mux.NewRouter().StrictSlash(true)
 
-	repositoryUser := repository.NewUserRepository(db)
+	repositoryUser := repository.NewUserRepository(db, context)
 	serviceUser := services.NewUserServices(repositoryUser)
 
 	myRouter.NotFoundHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
