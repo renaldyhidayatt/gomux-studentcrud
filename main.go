@@ -3,16 +3,22 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 
 	"github.com/gorilla/mux"
 	"github.com/renaldyhidayatt/crud_blog/config"
 	"github.com/renaldyhidayatt/crud_blog/dto"
+	"github.com/renaldyhidayatt/crud_blog/handler"
 	"github.com/renaldyhidayatt/crud_blog/migrate"
 	"github.com/renaldyhidayatt/crud_blog/repository"
 	"github.com/renaldyhidayatt/crud_blog/services"
 )
+
+func HomePage(w http.ResponseWriter, r *http.Request) {
+	fmt.Fprintf(w, "Welcome")
+}
 
 func main() {
 	db, err := config.InitialDatabase()
@@ -29,7 +35,8 @@ func main() {
 	myRouter := mux.NewRouter().StrictSlash(true)
 
 	repositoryUser := repository.NewUserRepository(db, context)
-	serviceUser := services.NewUserServices(repositoryUser)
+	serviceUser := services.NewUserService(repositoryUser)
+	handler := handler.NewUserHandler(serviceUser)
 
 	myRouter.NotFoundHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
@@ -54,12 +61,12 @@ func main() {
 		rw.Write(response)
 	})
 
-	myRouter.HandleFunc("/", services.HomePage).Methods("GET")
-	myRouter.HandleFunc("/user", serviceUser.GetAll)
-	myRouter.HandleFunc("/create", serviceUser.CreateUser).Methods("POST")
-	myRouter.HandleFunc("/{id}", serviceUser.GetID).Methods("GET")
-	myRouter.HandleFunc("/{id}", serviceUser.UpdateUser).Methods("PUT")
-	myRouter.HandleFunc("/{id}", serviceUser.DeleteUser).Methods("DELETE")
+	myRouter.HandleFunc("/", HomePage).Methods("GET")
+	myRouter.HandleFunc("/user", handler.GetAll)
+	myRouter.HandleFunc("/create", handler.CreateUser).Methods("POST")
+	myRouter.HandleFunc("/{id}", handler.GetID).Methods("GET")
+	myRouter.HandleFunc("/{id}", handler.UpdateUser).Methods("PUT")
+	myRouter.HandleFunc("/{id}", handler.DeleteUser).Methods("DELETE")
 
 	log.Fatal(http.ListenAndServe(":8000", myRouter))
 }

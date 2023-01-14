@@ -64,7 +64,7 @@ func (r *usersRepository) GetID(id int) (dto.Users, error) {
 
 }
 
-func (r *usersRepository) Insert(usr *dto.Users) (dto.Users, error) {
+func (r *usersRepository) Insert(usr dto.Users) (dto.Users, error) {
 
 	var user dto.Users
 

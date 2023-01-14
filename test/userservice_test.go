@@ -5,12 +5,15 @@ import (
 
 	"github.com/renaldyhidayatt/crud_blog/dto"
 	"github.com/renaldyhidayatt/crud_blog/repository"
+	"github.com/renaldyhidayatt/crud_blog/services"
 )
 
-func TestGetAll(t *testing.T) {
+func TestGetAllService(t *testing.T) {
 	repository := repository.NewUserRepository(ConnTest, Context)
 
-	users, err := repository.GetAll()
+	service := services.NewUserService(repository)
+
+	users, err := service.GetAll()
 
 	if err != nil {
 		t.Errorf("error was not expected while getting all users: %s", err)
@@ -18,15 +21,15 @@ func TestGetAll(t *testing.T) {
 	if len(users) != 2 {
 		t.Errorf("expected 2 users, but got %d", len(users))
 	}
-
 }
 
-func TestGetID(t *testing.T) {
+func TestGetIDService(t *testing.T) {
 	repository := repository.NewUserRepository(ConnTest, Context)
 
-	user, err := repository.GetID(1)
+	service := services.NewUserService(repository)
 
-	// validation
+	user, err := service.GetID(1)
+
 	if err != nil {
 		t.Errorf("error was not expected while getting user by ID: %s", err)
 	}
@@ -41,13 +44,13 @@ func TestGetID(t *testing.T) {
 	}
 }
 
-func TestInsert(t *testing.T) {
+func TestInsertService(t *testing.T) {
 	repository := repository.NewUserRepository(ConnTest, Context)
+	service := services.NewUserService(repository)
 
 	newUser := dto.Users{Name: "Jane Doe", Hobby: "Swimming"}
-	insertedUser, err := repository.Insert(newUser)
+	insertedUser, err := service.Insert(newUser)
 
-	// validation
 	if err != nil {
 		t.Errorf("error was not expected while inserting a new user: %s", err)
 	}
@@ -59,13 +62,13 @@ func TestInsert(t *testing.T) {
 	}
 }
 
-func TestUpdate(t *testing.T) {
+func TestUpdateservice(t *testing.T) {
 	repository := repository.NewUserRepository(ConnTest, Context)
+	service := services.NewUserService(repository)
 
 	updatedUser := dto.Users{ID: 1, Name: "John Smith", Hobby: "Hiking"}
-	updated, err := repository.Update(updatedUser)
+	updated, err := service.Update(updatedUser)
 
-	// validation
 	if err != nil {
 		t.Errorf("error was not expected while updating a user: %s", err)
 	}
@@ -77,11 +80,12 @@ func TestUpdate(t *testing.T) {
 	}
 }
 
-func TestDelete(t *testing.T) {
+func TestDeleteService(t *testing.T) {
 	repository := repository.NewUserRepository(ConnTest, Context)
-	err := repository.Delete(1)
+	service := services.NewUserService(repository)
 
-	// validation
+	err := service.Delete(1)
+
 	if err != nil {
 		t.Errorf("error was not expected while deleting a user: %s", err)
 	}

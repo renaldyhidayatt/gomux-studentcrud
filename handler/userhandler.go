@@ -1,8 +1,7 @@
-package services
+package handler
 
 import (
 	"encoding/json"
-	"io/ioutil"
 	"net/http"
 	"strconv"
 
@@ -12,16 +11,16 @@ import (
 	"github.com/renaldyhidayatt/crud_blog/utils"
 )
 
-type userServices struct {
+type userHandler struct {
 	user dao.DaoUser
 }
 
-func NewUserServices(user dao.DaoUser) *userServices {
-	return &userServices{user: user}
+func NewUserHandler(user dao.DaoUser) *userHandler {
+	return &userHandler{user: user}
 }
 
-func (s *userServices) GetAll(w http.ResponseWriter, r *http.Request) {
-	res, err := s.user.GetAll()
+func (h *userHandler) GetAll(w http.ResponseWriter, r *http.Request) {
+	res, err := h.user.GetAll()
 
 	if err != nil {
 		utils.ResponseWithError(w, http.StatusBadRequest, err.Error())
@@ -30,7 +29,7 @@ func (s *userServices) GetAll(w http.ResponseWriter, r *http.Request) {
 	utils.ResponseWithJSON(w, http.StatusOK, res)
 }
 
-func (s *userServices) GetID(w http.ResponseWriter, r *http.Request) {
+func (h *userHandler) GetID(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 
 	id, err := strconv.ParseInt(params["id"], 10, 64)
@@ -40,7 +39,7 @@ func (s *userServices) GetID(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	res, err := s.user.GetID(int(id))
+	res, err := h.user.GetID(int(id))
 
 	if err != nil {
 		utils.ResponseWithError(w, http.StatusBadRequest, err.Error())
@@ -54,7 +53,7 @@ func (s *userServices) GetID(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (s *userServices) CreateUser(w http.ResponseWriter, r *http.Request) {
+func (h *userHandler) CreateUser(w http.ResponseWriter, r *http.Request) {
 	if r.Header.Get("Content-Type") != "application/json" {
 		http.Error(w, "Gunakan content type application / json", http.StatusBadRequest)
 		return
@@ -67,7 +66,7 @@ func (s *userServices) CreateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	res, err := s.user.Insert(&users)
+	res, err := h.user.Insert(users)
 
 	if err != nil {
 		utils.ResponseWithError(w, http.StatusBadRequest, err.Error())
@@ -77,19 +76,27 @@ func (s *userServices) CreateUser(w http.ResponseWriter, r *http.Request) {
 
 }
 
-func (s *userServices) UpdateUser(w http.ResponseWriter, r *http.Request) {
-	body, err := ioutil.ReadAll(r.Body)
-
-	var users dto.Users
+func (h *userHandler) UpdateUser(w http.ResponseWriter, r *http.Request) {
+	params := mux.Vars(r)
+	id, err := strconv.ParseInt(params["id"], 10, 64)
 
 	if err != nil {
 		utils.ResponseWithError(w, http.StatusBadRequest, err.Error())
 		return
 	}
 
-	json.Unmarshal([]byte(body), &users)
+	var users dto.Users
 
-	res, err := s.user.Update(users)
+	err = json.NewDecoder(r.Body).Decode(&users)
+
+	users.ID = int(id)
+
+	if err != nil {
+		utils.ResponseWithError(w, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	res, err := h.user.Update(users)
 
 	if err != nil {
 		utils.ResponseWithError(w, http.StatusBadRequest, err.Error())
@@ -99,7 +106,7 @@ func (s *userServices) UpdateUser(w http.ResponseWriter, r *http.Request) {
 	utils.ResponseWithJSON(w, http.StatusOK, res)
 }
 
-func (s *userServices) DeleteUser(w http.ResponseWriter, r *http.Request) {
+func (h *userHandler) DeleteUser(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 
 	var user dto.Users
@@ -110,7 +117,7 @@ func (s *userServices) DeleteUser(w http.ResponseWriter, r *http.Request) {
 		panic(err.Error())
 	}
 
-	err = s.user.Delete(id)
+	err = h.user.Delete(id)
 
 	if err != nil {
 		utils.ResponseWithError(w, http.StatusBadRequest, err.Error())
